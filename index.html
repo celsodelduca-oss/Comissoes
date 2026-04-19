@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Comissões</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD9YF8vNnPV6FH-2BcJUxBylKBrmLrBSH0",
+  authDomain: "comissoes-4efea.firebaseapp.com",
+  projectId: "comissoes-4efea",
+  storageBucket: "comissoes-4efea.firebasestorage.app",
+  messagingSenderId: "1072501561514",
+  appId: "1:1072501561514:web:f72d23754a6f7b46d5d8d3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:rgba(0,0,0,.10);--border2:rgba(0,0,0,.18);
+  --text:#1a1917;--text2:#6b6860;--text3:#9e9b94;
+  --accent:#1a5c3a;--accent-bg:#e8f4ed;
+  --warn:#7a4a00;--warn-bg:#fff3e0;
+  --danger:#8b1a1a;--danger-bg:#fdeaea;
+  --info:#0f3d6e;--info-bg:#e8f0fb;
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-name{font-size:15px;font-weight:600}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:-1px}
+.header-actions{display:flex;gap:8px;flex-wrap:wrap}
+.main{max-width:1200px;margin:0 auto;padding:2rem}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:1.5rem}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.1rem 1.25rem;box-shadow:var(--shadow)}
+.metric-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.metric-value{font-size:22px;font-weight:600;font-family:'DM Mono',monospace}
+.metric-value.green{color:var(--accent)}.metric-value.warn{color:var(--warn)}.metric-value.danger{color:var(--danger)}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);margin-bottom:1.25rem;overflow:hidden}
+.card-header{padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border)}
+.card-title{font-size:14px;font-weight:600}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg)}
+.mono{font-family:'DM Mono',monospace}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.badge-ok{background:var(--accent-bg);color:var(--accent)}
+.badge-warn{background:var(--warn-bg);color:var(--warn)}
+.badge-danger{background:var(--danger-bg);color:var(--danger)}
+.badge-info{background:var(--info-bg);color:var(--info)}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border2);border-radius:var(--radius);padding:7px 14px;font-size:13px;font-weight:500;cursor:pointer;background:var(--surface);color:var(--text);font-family:'DM Sans',sans-serif;transition:background .12s}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#145030;border-color:#145030}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-warn{background:var(--warn-bg);color:var(--warn);border-color:rgba(122,74,0,.2)}
+.btn-warn:hover{background:#ffe5b0}
+.btn-danger{background:var(--danger-bg);color:var(--danger);border-color:rgba(139,26,26,.2)}
+.btn-danger:hover{background:#f5c5c5}
+.form-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;font-weight:500;color:var(--text2)}
+.field input,.field select{border:1px solid var(--border2);border-radius:var(--radius);padding:8px 10px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);transition:border-color .12s;width:100%}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(26,92,58,.12)}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin:1.25rem 0 .75rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.calc-box{background:var(--bg);border-radius:var(--radius);padding:.9rem 1rem;margin-bottom:14px;border:1px solid var(--border)}
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:13px}
+.calc-row.divider{border-top:1px solid var(--border);margin-top:6px;padding-top:10px;font-weight:600}
+.calc-row.com{color:var(--accent);font-weight:600;font-size:14px;border-top:1px solid var(--border);margin-top:6px;padding-top:10px}
+.calc-label{color:var(--text2)}
+.ipi-tag{display:inline-block;font-size:10px;font-weight:600;background:var(--info-bg);color:var(--info);padding:2px 7px;border-radius:20px;margin-left:6px}
+.parcela-row{display:grid;grid-template-columns:45px 105px 1fr 1fr 115px;gap:8px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--border);font-size:13px}
+.parcela-row:last-child{border-bottom:none}
+.parcela-num{font-family:'DM Mono',monospace;color:var(--text3);font-size:12px}
+.modal-backdrop{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.38);align-items:flex-start;justify-content:center;padding:2rem 1rem;overflow-y:auto}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);width:min(620px,100%);padding:1.75rem;box-shadow:0 20px 60px rgba(0,0,0,.18);margin:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--text3);line-height:1;padding:2px 6px;border-radius:6px}
+.modal-close:hover{background:var(--bg);color:var(--text)}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1.5rem;flex-wrap:wrap}
+.upload-area{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:2.5rem;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;display:block}
+.upload-area:hover{border-color:var(--accent);background:var(--accent-bg)}
+.loading-wrap{text-align:center;padding:2.5rem 0}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 14px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:10px 0}
+.progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 2.5s ease}
+.nf-img-preview{max-width:100%;max-height:200px;border-radius:var(--radius);border:1px solid var(--border);object-fit:contain;display:block;margin:0 auto}
+.nf-preview-box{background:var(--bg);border-radius:var(--radius);padding:.85rem 1rem;font-size:12px;color:var(--text2);font-family:'DM Mono',monospace;white-space:pre-wrap;margin-bottom:1.25rem;line-height:1.6}
+.tbl-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;white-space:nowrap}
+.tbl-btn:hover{background:var(--bg)}
+.tbl-btn-green{color:var(--accent);border-color:rgba(26,92,58,.25)}.tbl-btn-green:hover{background:var(--accent-bg)}
+.tbl-btn-warn{color:var(--warn);border-color:rgba(122,74,0,.25)}.tbl-btn-warn:hover{background:var(--warn-bg)}
+.tbl-btn-red{color:var(--danger);border-color:rgba(139,26,26,.2)}.tbl-btn-red:hover{background:var(--danger-bg)}
+.gap6{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.filter-sel{border:1px solid var(--border2);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--text);cursor:pointer}
+.empty-state{text-align:center;padding:3rem;color:var(--text3);font-size:14px}
+.row-danger td{background:var(--danger-bg)!important}
+.confirm-modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);width:min(420px,95vw);padding:2rem 1.75rem;box-shadow:0 20px 60px rgba(0,0,0,.2);margin:auto;text-align:center}
+@media(max-width:640px){.main{padding:1rem}.form-grid2,.form-grid3{grid-template-columns:1fr}.header{padding:0 1rem}.btn{padding:6px 10px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <path d="M9 12h6M9 16h4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-name">Gestão de Comissões</div>
+      <div class="logo-sub">IPI fixo 9,75% · Controle de NFs e recebimentos</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-sm" onclick="abrirConfigApiKey()" title="Configurar API Key da Anthropic">&#9881; Config</button>
+    <button class="btn btn-sm" onclick="exportCSV()">&#8595; CSV</button>
+    <button class="btn" onclick="abrirManual()">+ Lançar NF</button>
+    <button class="btn btn-primary" onclick="abrirIA()">&#128247; Ler NF por IA</button>
+  </div>
+</div>
+
+<div class="main">
+  <div class="metrics" id="metricas"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Notas fiscais lançadas</span>
+      <select class="filter-sel" id="filtro" onchange="renderTabela()">
+        <option value="">Todos os status</option>
+        <option value="pendente">Pendente</option>
+        <option value="parcial">Parcial</option>
+        <option value="recebido">Recebido</option>
+        <option value="vencido">Vencido</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>NF</th><th>Cliente</th><th>Emissão</th>
+          <th>Valor produtos</th><th>IPI (9,75%)</th><th>Total NF</th>
+          <th>Parcelas</th><th>Próx. venc.</th>
+          <th>Minha comissão</th><th>Status</th>
+          <th style="width:150px"></th>
+        </tr></thead>
+        <tbody id="tbody-nf"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CARD PARCELAS POR MES -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" id="parc-titulo">Parcelas por mês</span>
+      <div class="gap6">
+        <button class="btn btn-sm" id="btn-mes-ant" onclick="mudarMes(-1)">&#8592;</button>
+        <select class="filter-sel" id="sel-mes" onchange="renderParcelas()"></select>
+        <button class="btn btn-sm" id="btn-mes-prox" onclick="mudarMes(1)">&#8594;</button>
+        <select class="filter-sel" id="filtro-parc-status" onchange="renderParcelas()">
+          <option value="">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="recebido">Recebido</option>
+          <option value="vencido">Vencido</option>
+        </select>
+      </div>
+    </div>
+    <!-- RESUMO DO MES -->
+    <div id="resumo-mes" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;padding:1rem 1.25rem;border-bottom:1px solid var(--border)"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Cliente</th><th>NF</th><th>Parcela</th><th>Vencimento</th>
+          <th>Valor parcela</th><th>Minha comissão</th><th>Situação</th><th style="width:110px"></th>
+        </tr></thead>
+        <tbody id="tbody-parcelas"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL FORM -->
+<div class="modal-backdrop" id="modal-form">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="form-titulo">Nova NF</div>
+      <button class="modal-close" onclick="fecharModal('modal-form')">&times;</button>
+    </div>
+
+    <div id="step-upload" style="display:none">
+      <label class="upload-area" for="file-nf">
+        <input type="file" id="file-nf" accept="image/*,application/pdf" style="display:none" onchange="processarArquivo(this)">
+        <div style="font-size:36px;margin-bottom:12px">&#128196;</div>
+        <div style="font-weight:600;margin-bottom:4px">Clique para anexar foto ou PDF da NF</div>
+        <div style="font-size:12px;color:var(--text3)">JPG, PNG ou PDF — a IA extrai os dados automaticamente</div>
+      </label>
+      <div id="upload-preview" style="display:none;margin-top:14px;text-align:center">
+        <img id="upload-img" class="nf-img-preview" src="" alt="Preview">
+        <div style="font-size:12px;color:var(--text3);margin-top:6px" id="upload-nome"></div>
+      </div>
+      <div id="api-key-aviso" style="display:none;margin-top:14px;background:var(--danger-bg);border-radius:var(--radius);padding:.75rem 1rem;font-size:13px;color:var(--danger);text-align:left;line-height:1.6">
+        <b>Servidor local nao detectado.</b><br>
+        Para a leitura automatica funcionar, o <b>servidor.py</b> precisa estar rodando.<br><br>
+        1. Instale a dependencia: <code style="background:rgba(0,0,0,.07);padding:1px 5px;border-radius:4px">pip install anthropic</code><br>
+        2. Execute na pasta do sistema: <code style="background:rgba(0,0,0,.07);padding:1px 5px;border-radius:4px">python servidor.py</code><br>
+        3. Configure a API Key em <button onclick="abrirConfigApiKey()" style="background:none;border:none;color:var(--danger);font-weight:600;cursor:pointer;text-decoration:underline">Configuracoes</button>
+      </div>
+      <div style="text-align:center;margin-top:14px">
+        <button class="btn btn-sm" onclick="usarExemplo()">Usar NF de exemplo (11277)</button>
+      </div>
+    </div>
+
+    <div id="step-loading" style="display:none">
+      <div class="loading-wrap">
+        <div class="spinner"></div>
+        <div style="font-weight:500;margin-bottom:6px" id="loading-msg">Lendo NF com IA...</div>
+        <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0"></div></div>
+        <div style="font-size:12px;color:var(--text3);margin-top:6px">Extraindo dados da nota fiscal...</div>
+      </div>
+    </div>
+
+    <div id="step-form" style="display:none">
+      <div id="form-img-wrap" style="display:none;margin-bottom:14px;text-align:center">
+        <img id="form-img" class="nf-img-preview" src="" alt="NF">
+      </div>
+      <div id="form-prev-txt" class="nf-preview-box" style="display:none"></div>
+
+      <div class="section-label" id="form-section-lbl">Dados da NF</div>
+      <div class="form-grid2" style="margin-bottom:14px">
+        <div class="field"><label>Numero da NF</label><input type="text" id="f-numero" placeholder="ex: 11277"></div>
+        <div class="field"><label>Data de emissao</label><input type="date" id="f-emissao"></div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Cliente (destinatario)</label>
+        <input type="text" id="f-cliente" placeholder="Nome / Razao social">
+      </div>
+
+      <div class="section-label">Valores</div>
+      <div class="form-grid2" style="margin-bottom:6px">
+        <div class="field">
+          <label>Valor dos produtos (R$)</label>
+          <input type="number" id="f-vprod" step="0.01" min="0" placeholder="0,00" oninput="recalcDeProd()">
+        </div>
+        <div class="field">
+          <label>Valor total da NF (R$)</label>
+          <input type="number" id="f-vtotal" step="0.01" min="0" placeholder="0,00" oninput="recalcDeTotal()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Preencha um dos campos — o outro e calculado automaticamente com IPI 9,75%.</div>
+
+      <div class="calc-box" id="calc-box" style="display:none">
+        <div class="calc-row"><span class="calc-label">Valor dos produtos</span><span class="mono" id="cv-prod">—</span></div>
+        <div class="calc-row"><span class="calc-label">IPI <span class="ipi-tag">9,75% fixo</span></span><span class="mono" id="cv-ipi">—</span></div>
+        <div class="calc-row"><span class="calc-label">Frete / outros</span><span class="mono" id="cv-frete">—</span></div>
+        <div class="calc-row divider"><span>Total da NF</span><span class="mono" id="cv-total">—</span></div>
+        <div style="height:8px"></div>
+        <div class="calc-row" style="align-items:center">
+          <span class="calc-label">Minha taxa de comissao</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="f-taxa" step="0.01" min="0" max="100" value="5"
+              style="width:65px;border:1px solid var(--border2);border-radius:8px;padding:5px 8px;font-size:13px;font-family:'DM Mono',monospace;text-align:right;background:var(--surface);color:var(--text)"
+              oninput="atualizarCalc()">
+            <span style="font-size:13px;color:var(--text2)">%</span>
+          </span>
+        </div>
+        <div class="calc-row com"><span>Minha comissao total</span><span class="mono" id="cv-com">—</span></div>
+      </div>
+
+      <div class="section-label">Parcelamento</div>
+      <div class="form-grid2" style="margin-bottom:12px">
+        <div class="field">
+          <label>Numero de parcelas</label>
+          <select id="f-parc" onchange="gerarParcelas()">
+            <option value="1">A vista (1x)</option>
+            <option value="2">2x</option><option value="3">3x</option>
+            <option value="4">4x</option><option value="5">5x</option>
+            <option value="6">6x</option><option value="12">12x</option>
+          </select>
+        </div>
+        <div class="field"><label>Data da 1a parcela</label><input type="date" id="f-data1" onchange="gerarParcelas()"></div>
+      </div>
+      <div id="parcelas-prev" style="background:var(--bg);border-radius:var(--radius);padding:.75rem 1rem;margin-bottom:16px;display:none"></div>
+
+      <div class="modal-footer">
+        <button class="btn" onclick="fecharModal('modal-form')">Cancelar</button>
+        <button class="btn btn-primary" id="btn-salvar" onclick="salvarNF()">Salvar NF</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE -->
+<div class="modal-backdrop" id="modal-detalhe">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="detalhe-titulo">Detalhes</div>
+      <button class="modal-close" onclick="fecharModal('modal-detalhe')">&times;</button>
+    </div>
+    <div id="detalhe-content"></div>
+    <div class="modal-footer">
+      <button class="btn btn-warn" id="btn-edit-det">&#9998; Editar</button>
+      <button class="btn btn-danger" id="btn-del-det">&#128465; Excluir</button>
+      <button class="btn" onclick="fecharModal('modal-detalhe')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSAO -->
+<div class="modal-backdrop" id="modal-confirm">
+  <div class="confirm-modal">
+    <div style="font-size:40px;margin-bottom:12px">&#128465;</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:8px">Excluir lancamento</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:1rem;line-height:1.6" id="confirm-msg"></div>
+    <div style="font-size:12px;color:var(--danger);background:var(--danger-bg);border-radius:var(--radius);padding:.6rem .85rem;margin-bottom:1.25rem;line-height:1.5">
+      A NF e todas as suas parcelas serao excluidas permanentemente.<br>Esta acao nao pode ser desfeita.
+    </div>
+    <div style="display:flex;justify-content:center;gap:10px">
+      <button class="btn" onclick="fecharModal('modal-confirm')">Cancelar</button>
+      <button class="btn btn-danger" id="btn-confirm-ok">Sim, excluir tudo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const IPI = 0.0975;
+const fmt = v => 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtD = d => { if(!d) return '-'; const [y,m,dd]=d.split('-'); return dd+'/'+m+'/'+y; };
+const addM = (ds,n) => { const d=new Date(ds+'T12:00:00'); d.setMonth(d.getMonth()+n); return d.toISOString().split('T')[0]; };
+const hoje = () => new Date().toISOString().split('T')[0];
+const diffD = d => Math.round((new Date(d+'T12:00:00')-new Date())/86400000);
+
+function fromVprod(vp, fr) {
+  vp=+(+vp).toFixed(2); fr=+(+fr||0).toFixed(2);
+  const ipi=+(vp*IPI).toFixed(2);
+  return {vprod:vp, ipi, frete:fr, totalNF:+(vp+ipi+fr).toFixed(2)};
+}
+function fromTotal(vt, fr) {
+  vt=+(+vt).toFixed(2); fr=+(+fr||0).toFixed(2);
+  const vp=+((vt-fr)/(1+IPI)).toFixed(2);
+  const ipi=+(vp*IPI).toFixed(2);
+  return {vprod:vp, ipi, frete:fr, totalNF:vt};
+}
+
+let notas=[
+  {id:1,numero:'11160',cliente:'JR Instalacoes e Automatizacoes Industriais LTDA',
+   emissao:'2026-02-04',vprod:1829.23,ipi:195.03,frete:171.07,totalNF:2195.33,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-02-23',valor:2195.33,comissao:+((1829.23+171.07)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:2,numero:'11161',cliente:'Ampla Elevadores Manutencao Serv Fabr e Com LTDA',
+   emissao:'2026-02-04',vprod:4875.49,ipi:475.36,frete:0,totalNF:5350.85,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-03-06',valor:5350.85,comissao:+((4875.49)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:3,numero:'11169',cliente:'Opcao Eletromotores LTDA',
+   emissao:'2026-02-10',vprod:7567.96,ipi:768.43,frete:313.35,totalNF:8649.74,taxa:3,imgSrc:null,
+   parcelas:[
+     {n:1,venc:'2026-03-01',valor:4324.87,comissao:+((7567.96+313.35)*0.03/2).toFixed(2),status:'pendente'},
+     {n:2,venc:'2026-03-21',valor:4324.87,comissao:+((7567.96+313.35)*0.03/2).toFixed(2),status:'pendente'}
+   ]},
+
+  {id:4,numero:'11184',cliente:'Eletrominas Automacao e Materiais Eletricos',
+   emissao:'2026-02-18',vprod:65093.12,ipi:6346.58,frete:0,totalNF:71439.70,taxa:3,imgSrc:null,
+   parcelas:[
+     {n:1,venc:'2026-03-20',valor:23813.23,comissao:+((65093.12)*0.03/3).toFixed(2),status:'pendente'},
+     {n:2,venc:'2026-04-19',valor:23813.23,comissao:+((65093.12)*0.03/3).toFixed(2),status:'pendente'},
+     {n:3,venc:'2026-05-19',valor:23813.24,comissao:+((65093.12)*0.03/3).toFixed(2),status:'pendente'}
+   ]},
+
+  {id:5,numero:'11200',cliente:'RS Pocos Artesianos LTDA',
+   emissao:'2026-02-27',vprod:11615.22,ipi:1132.48,frete:0,totalNF:12747.70,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-03-29',valor:12747.70,comissao:+((11615.22)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:6,numero:'11208',cliente:'JFX Irrigacao LTDA',
+   emissao:'2026-03-04',vprod:5616.40,ipi:547.60,frete:0,totalNF:6164.00,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-03-24',valor:6164.00,comissao:+((5616.40)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:7,numero:'11212',cliente:'Vallourec Solucoes Tubulares do Brasil S',
+   emissao:'2026-03-05',vprod:67807.34,ipi:10171.10,frete:0,totalNF:77978.44,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-04-18',valor:77978.44,comissao:+((67807.34)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:8,numero:'11220',cliente:'Duartec Comercio e Servicos de Bombas LTDA',
+   emissao:'2026-03-10',vprod:4263.82,ipi:415.72,frete:0,totalNF:4679.54,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-03-30',valor:4679.54,comissao:+((4263.82)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:9,numero:'11226',cliente:'Opcao Eletromotores LTDA',
+   emissao:'2026-03-11',vprod:6281.96,ipi:643.78,frete:320.92,totalNF:7246.66,taxa:3,imgSrc:null,
+   parcelas:[
+     {n:1,venc:'2026-03-30',valor:3623.33,comissao:+((6281.96+320.92)*0.03/2).toFixed(2),status:'pendente'},
+     {n:2,venc:'2026-04-19',valor:3623.33,comissao:+((6281.96+320.92)*0.03/2).toFixed(2),status:'pendente'}
+   ]},
+
+  {id:10,numero:'11245',cliente:'Ampla Elevadores Manutencao Serv Fabr e Com LTDA',
+   emissao:'2026-03-20',vprod:5656.11,ipi:551.47,frete:0,totalNF:6207.58,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-04-19',valor:6207.58,comissao:+((5656.11)*0.03).toFixed(2),status:'pendente'}]},
+
+  {id:11,numero:'11277',cliente:'Elevar Com e Ass.Tec de Elevadores LTDA',
+   emissao:'2026-04-01',vprod:2979.70,ipi:309.65,frete:196.17,totalNF:3485.52,taxa:3,imgSrc:null,
+   parcelas:[{n:1,venc:'2026-04-30',valor:3485.52,comissao:+((2979.70+196.17)*0.03).toFixed(2),status:'pendente'}]}
+];
+let nextId=12, modoEdicao=null, imgCapturada=null;
+let _vp=0,_ipi=0,_fr=0,_tot=0;
+
+function statusNota(n){
+  const tot=n.parcelas.length,pag=n.parcelas.filter(p=>p.status==='recebido').length;
+  const ven=n.parcelas.filter(p=>p.status!=='recebido'&&diffD(p.venc)<0).length;
+  if(pag===tot)return'recebido';if(ven>0)return'vencido';if(pag>0)return'parcial';return'pendente';
+}
+function proxP(n){return n.parcelas.filter(p=>p.status!=='recebido').sort((a,b)=>a.venc.localeCompare(b.venc))[0]||null;}
+function totCom(n){return +n.parcelas.reduce((s,p)=>s+(p.comissao||0),0).toFixed(2);}
+const bSt=st=>({recebido:'badge-ok',vencido:'badge-danger',parcial:'badge-warn',pendente:'badge-info'})[st];
+const lSt=st=>({recebido:'Recebido',vencido:'Vencido',parcial:'Parcial',pendente:'Pendente'})[st];
+
+function renderMetricas(){
+  const tF=notas.reduce((s,n)=>s+n.totalNF,0);
+  const tC=notas.reduce((s,n)=>s+totCom(n),0);
+  const rec=notas.reduce((s,n)=>s+n.parcelas.filter(p=>p.status==='recebido').reduce((ss,p)=>ss+p.comissao,0),0);
+  const ven=notas.reduce((s,n)=>s+n.parcelas.filter(p=>p.status!=='recebido'&&diffD(p.venc)<0).length,0);
+  document.getElementById('metricas').innerHTML=
+    '<div class="metric"><div class="metric-label">Total NFs</div><div class="metric-value">'+notas.length+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Faturamento</div><div class="metric-value" style="font-size:16px">'+fmt(tF)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Comissao total</div><div class="metric-value green" style="font-size:16px">'+fmt(tC)+'</div><div class="metric-sub">sobre valor dos produtos</div></div>'+
+    '<div class="metric"><div class="metric-label">Ja recebido</div><div class="metric-value green" style="font-size:16px">'+fmt(rec)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">A receber</div><div class="metric-value warn" style="font-size:16px">'+fmt(tC-rec)+'</div></div>'+
+    (ven>0?'<div class="metric"><div class="metric-label">Vencidas</div><div class="metric-value danger">'+ven+'</div><div class="metric-sub">parcelas em atraso</div></div>':'');
+}
+
+function renderTabela(){
+  const filtro=document.getElementById('filtro').value;
+  const lista=filtro?notas.filter(n=>statusNota(n)===filtro):notas;
+  let h='';
+  if(!lista.length){h='<tr><td colspan="11"><div class="empty-state">Nenhuma NF lancada. Clique em Lancar NF para comecar.</div></td></tr>';}
+  else lista.forEach(n=>{
+    const st=statusNota(n),prx=proxP(n);
+    h+='<tr>'+
+      '<td class="mono" style="font-weight:600">'+n.numero+'</td>'+
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+n.cliente+'">'+n.cliente+'</td>'+
+      '<td>'+fmtD(n.emissao)+'</td>'+
+      '<td class="mono">'+fmt(n.vprod)+'</td>'+
+      '<td class="mono">'+fmt(n.ipi)+'</td>'+
+      '<td class="mono">'+fmt(n.totalNF)+'</td>'+
+      '<td style="text-align:center">'+n.parcelas.length+'x</td>'+
+      '<td style="font-size:12px">'+(prx?fmtD(prx.venc)+'<br><span style="color:var(--text3)">'+fmt(prx.valor)+'</span>':'-')+'</td>'+
+      '<td class="mono" style="color:var(--accent);font-weight:600">'+fmt(totCom(n))+'</td>'+
+      '<td><span class="badge '+bSt(st)+'">'+lSt(st)+'</span></td>'+
+      '<td><div class="gap6">'+
+        '<button class="tbl-btn tbl-btn-green" onclick="verDetalhe('+n.id+')">Ver</button>'+
+        '<button class="tbl-btn tbl-btn-warn" onclick="editarNota('+n.id+')">Editar</button>'+
+        '<button class="tbl-btn tbl-btn-red" onclick="confirmarExcluir('+n.id+')">Excluir</button>'+
+      '</div></td></tr>';
+  });
+  document.getElementById('tbody-nf').innerHTML=h;
+
+}
+
+// ---- CONTROLE DE MÊS ----
+const MESES_NOMES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+let mesSel = new Date().getMonth();
+let anoSel = new Date().getFullYear();
+
+function iniciarSeletorMes(){
+  // Coleta todos os meses/anos que têm parcelas
+  const mapa={};
+  notas.forEach(n=>n.parcelas.forEach(p=>{
+    if(!p.venc)return;
+    const [y,m]=p.venc.split('-');
+    const k=y+'-'+m; mapa[k]={y:+y,m:+m-1};
+  }));
+  // Garante que o mês atual sempre aparece
+  const agora=new Date();
+  const ka=agora.getFullYear()+'-'+(String(agora.getMonth()+1).padStart(2,'0'));
+  mapa[ka]={y:agora.getFullYear(),m:agora.getMonth()};
+
+  const lista=Object.keys(mapa).sort();
+  const sel=document.getElementById('sel-mes');
+  sel.innerHTML='';
+  lista.forEach(k=>{
+    const {y,m}=mapa[k];
+    const opt=document.createElement('option');
+    opt.value=k; opt.textContent=MESES_NOMES[m]+' '+y;
+    if(m===mesSel&&y===anoSel) opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+
+function mudarMes(delta){
+  const sel=document.getElementById('sel-mes');
+  const opts=Array.from(sel.options);
+  const idx=opts.findIndex(o=>o.selected);
+  const novoIdx=Math.max(0,Math.min(opts.length-1,idx+delta));
+  opts[novoIdx].selected=true;
+  const [y,m]=opts[novoIdx].value.split('-');
+  mesSel=+m-1; anoSel=+y;
+  renderParcelas();
+}
+
+function renderParcelas(){
+  const sel=document.getElementById('sel-mes');
+  if(!sel.options.length){
+    document.getElementById('tbody-parcelas').innerHTML='<tr><td colspan="8"><div class="empty-state">Nenhuma parcela lançada.</div></td></tr>';
+    document.getElementById('resumo-mes').innerHTML='';
+    return;
+  }
+  const val=sel.value;
+  const [anoStr,mesStr]=val.split('-');
+  const ano=+anoStr, mes=+mesStr-1;
+  mesSel=mes; anoSel=ano;
+  const filtroSt=document.getElementById('filtro-parc-status').value;
+  const mesLabel=MESES_NOMES[mes]+' '+ano;
+  document.getElementById('parc-titulo').textContent='Parcelas — '+mesLabel;
+
+  // Filtra parcelas do mês selecionado
+  let lista=[];
+  notas.forEach(n=>{
+    n.parcelas.forEach((p,i)=>{
+      if(!p.venc)return;
+      const [y,m]=p.venc.split('-');
+      if(+y!==ano||+m-1!==mes)return;
+      if(filtroSt&&p.status!==filtroSt&&!(filtroSt==='vencido'&&diffD(p.venc)<0&&p.status!=='recebido'))return;
+      lista.push({n,p,i});
+    });
+  });
+
+  // Resumo
+  const totVal=lista.reduce((s,x)=>s+x.p.valor,0);
+  const totCom=lista.reduce((s,x)=>s+x.p.comissao,0);
+  const recebido=lista.filter(x=>x.p.status==='recebido').reduce((s,x)=>s+x.p.comissao,0);
+  const aReceber=lista.filter(x=>x.p.status!=='recebido').reduce((s,x)=>s+x.p.comissao,0);
+  const vencidas=lista.filter(x=>x.p.status!=='recebido'&&diffD(x.p.venc)<0).length;
+  document.getElementById('resumo-mes').innerHTML=
+    '<div class="metric"><div class="metric-label">Parcelas no mês</div><div class="metric-value">'+lista.length+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Total a receber (NF)</div><div class="metric-value" style="font-size:16px">'+fmt(totVal)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Comissão do mês</div><div class="metric-value green" style="font-size:16px">'+fmt(totCom)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Comissão recebida</div><div class="metric-value green" style="font-size:16px">'+fmt(recebido)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Comissão a receber</div><div class="metric-value warn" style="font-size:16px">'+fmt(aReceber)+'</div></div>'+
+    (vencidas>0?'<div class="metric"><div class="metric-label">Vencidas</div><div class="metric-value danger">'+vencidas+'</div></div>':'');
+
+  // Tabela
+  let rp='';
+  lista.forEach(function(x){
+    const p=x.p,n=x.n,i=x.i;
+    const d=diffD(p.venc);
+    const sit=p.status==='recebido'?'Recebido':d<0?'Atraso '+Math.abs(d)+'d':d===0?'Vence hoje':'Vence em '+d+'d';
+    const bd=p.status==='recebido'?'badge-ok':d<0?'badge-danger':d<=5?'badge-warn':'badge-info';
+    const danger=d<0&&p.status!=='recebido';
+    rp+='<tr'+(danger?' class="row-danger"':'')+'><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+n.cliente+'">'+n.cliente+'</td><td class="mono">'+n.numero+'</td><td style="text-align:center">'+(i+1)+'/'+n.parcelas.length+'</td><td>'+fmtD(p.venc)+'</td><td class="mono">'+fmt(p.valor)+'</td><td class="mono" style="color:var(--accent);font-weight:600">'+fmt(p.comissao)+'</td><td><span class="badge '+bd+'">'+sit+'</span></td><td><button class="tbl-btn tbl-btn-green" onclick="togglePago('+n.id+','+i+')">'+(p.status==='recebido'?'Desfazer':'Marcar pago')+'</button></td></tr>';
+  });
+  document.getElementById('tbody-parcelas').innerHTML=rp||'<tr><td colspan="8"><div class="empty-state">Nenhuma parcela em '+mesLabel+(filtroSt?' com status selecionado':'')+'.</div></td></tr>';
+}
+
+function render(){renderMetricas();renderTabela();iniciarSeletorMes();renderParcelas();}
+
+function recalcDeProd(){
+  const vp=parseFloat(document.getElementById('f-vprod').value)||0;
+  if(!vp){esconderCalc();return;}
+  const r=fromVprod(vp,_fr);
+  _vp=r.vprod;_ipi=r.ipi;_tot=r.totalNF;
+  document.getElementById('f-vtotal').value=r.totalNF.toFixed(2);
+  mostrarCalcUI();
+}
+function recalcDeTotal(){
+  const vt=parseFloat(document.getElementById('f-vtotal').value)||0;
+  if(!vt){esconderCalc();return;}
+  const r=fromTotal(vt,_fr);
+  _vp=r.vprod;_ipi=r.ipi;_tot=r.totalNF;
+  document.getElementById('f-vprod').value=r.vprod.toFixed(2);
+  mostrarCalcUI();
+}
+function mostrarCalcUI(){
+  const taxa=parseFloat(document.getElementById('f-taxa').value)||0;
+  const com=+(_vp*taxa/100).toFixed(2);
+  document.getElementById('cv-prod').textContent=fmt(_vp);
+  document.getElementById('cv-ipi').textContent=fmt(_ipi);
+  document.getElementById('cv-frete').textContent=_fr>0?fmt(_fr):'—';
+  document.getElementById('cv-total').textContent=fmt(_tot);
+  document.getElementById('cv-com').textContent=fmt(com);
+  document.getElementById('calc-box').style.display='block';
+  gerarParcelas();
+}
+function esconderCalc(){_vp=0;_ipi=0;_fr=0;_tot=0;document.getElementById('calc-box').style.display='none';document.getElementById('parcelas-prev').style.display='none';}
+function atualizarCalc(){if(_vp>0)mostrarCalcUI();}
+function gerarParcelas(){
+  if(!_vp)return;
+  const taxa=parseFloat(document.getElementById('f-taxa').value)||0;
+  const nP=parseInt(document.getElementById('f-parc').value)||1;
+  const d1=document.getElementById('f-data1').value||hoje();
+  const com=+(_vp*taxa/100).toFixed(2);
+  const vP=+(_tot/nP).toFixed(2),cP=+(com/nP).toFixed(2);
+  let h='';
+  for(let k=0;k<nP;k++){
+    const vc=addM(d1,k),d=diffD(vc);
+    let bd='badge-info',s=fmtD(vc);
+    if(d<0){bd='badge-danger';s='Vencido';}else if(d<=5){bd='badge-warn';s='Vence em '+d+'d';}
+    h+='<div class="parcela-row"><span class="parcela-num">'+(k+1)+'/'+nP+'</span><span>'+fmtD(vc)+'</span><span class="mono">'+fmt(vP)+'</span><span class="mono" style="color:var(--accent)">'+fmt(cP)+'</span><span><span class="badge '+bd+'" style="font-size:10px">'+s+'</span></span></div>';
+  }
+  const pv=document.getElementById('parcelas-prev');
+  pv.innerHTML=h;pv.style.display='block';
+}
+
+function fecharModal(id){document.getElementById(id).classList.remove('open');}
+function mostrarStep(s){
+  document.getElementById('step-upload').style.display=s==='upload'?'block':'none';
+  document.getElementById('step-loading').style.display=s==='loading'?'block':'none';
+  document.getElementById('step-form').style.display=s==='form'?'block':'none';
+}
+function resetForm(){
+  ['f-numero','f-cliente','f-vprod','f-vtotal'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-emissao').value=hoje();
+  document.getElementById('f-taxa').value='5';
+  document.getElementById('f-parc').value='1';
+  document.getElementById('f-data1').value=addM(hoje(),1);
+  document.getElementById('form-prev-txt').style.display='none';
+  document.getElementById('form-img-wrap').style.display='none';
+  document.getElementById('form-img').src='';
+  document.getElementById('calc-box').style.display='none';
+  document.getElementById('parcelas-prev').style.display='none';
+  _vp=0;_ipi=0;_fr=0;_tot=0;imgCapturada=null;
+}
+
+function abrirIA(){
+  modoEdicao=null;resetForm();
+  document.getElementById('form-titulo').textContent='Ler NF por IA';
+  document.getElementById('btn-salvar').textContent='Salvar NF';
+  document.getElementById('form-section-lbl').textContent='Dados extraidos — confirme antes de salvar';
+  document.getElementById('file-nf').value='';
+  document.getElementById('upload-preview').style.display='none';
+  checarServidor().then(s=>{
+    document.getElementById('api-key-aviso').style.display=(s&&s.key_configurada)?'none':'block';
+  });
+  mostrarStep('upload');
+  document.getElementById('modal-form').classList.add('open');
+}
+function abrirManual(){
+  modoEdicao=null;resetForm();
+  document.getElementById('form-titulo').textContent='Nova NF';
+  document.getElementById('btn-salvar').textContent='Salvar NF';
+  document.getElementById('form-section-lbl').textContent='Dados da NF';
+  mostrarStep('form');
+  document.getElementById('modal-form').classList.add('open');
+}
+function editarNota(nid){
+  const n=notas.find(x=>x.id===nid);if(!n)return;
+  modoEdicao=nid;imgCapturada=n.imgSrc||null;
+  resetForm();
+  document.getElementById('form-titulo').textContent='Editar NF '+n.numero;
+  document.getElementById('btn-salvar').textContent='Salvar alteracoes';
+  document.getElementById('form-section-lbl').textContent='Editar dados da NF';
+  document.getElementById('f-numero').value=n.numero;
+  document.getElementById('f-emissao').value=n.emissao;
+  document.getElementById('f-cliente').value=n.cliente;
+  document.getElementById('f-taxa').value=n.taxa;
+  document.getElementById('f-parc').value=String(n.parcelas.length);
+  document.getElementById('f-data1').value=n.parcelas[0]?n.parcelas[0].venc:addM(n.emissao,1);
+  _fr=n.frete||0;_vp=n.vprod;_ipi=n.ipi;_tot=n.totalNF;
+  document.getElementById('f-vprod').value=n.vprod.toFixed(2);
+  document.getElementById('f-vtotal').value=n.totalNF.toFixed(2);
+  if(n.imgSrc){document.getElementById('form-img').src=n.imgSrc;document.getElementById('form-img-wrap').style.display='block';}
+  mostrarStep('form');mostrarCalcUI();
+  document.getElementById('modal-form').classList.add('open');
+  fecharModal('modal-detalhe');
+}
+
+function animProg(){
+  const pf=document.getElementById('prog-fill');
+  pf.style.transition='none';pf.style.width='0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{pf.style.transition='width 2.5s ease';pf.style.width='95%';}));
+}
+function mostrarLoading(msg){document.getElementById('loading-msg').textContent=msg||'Lendo NF com IA...';mostrarStep('loading');animProg();}
+function preencherFormIA(d){
+  mostrarStep('form');
+  document.getElementById('f-numero').value=d.numero||'';
+  document.getElementById('f-cliente').value=d.cliente||'';
+  document.getElementById('f-emissao').value=d.emissao||hoje();
+  document.getElementById('f-taxa').value='5';
+  document.getElementById('f-parc').value='1';
+  document.getElementById('f-data1').value=addM(d.emissao||hoje(),1);
+  _fr=d.frete||0;
+  if(d.vprod&&+d.vprod>0){const r=fromVprod(d.vprod,_fr);_vp=r.vprod;_ipi=r.ipi;_tot=r.totalNF;}
+  else if(d.totalNF&&+d.totalNF>0){const r=fromTotal(d.totalNF,_fr);_vp=r.vprod;_ipi=r.ipi;_tot=r.totalNF;}
+  document.getElementById('f-vprod').value=_vp?_vp.toFixed(2):'';
+  document.getElementById('f-vtotal').value=_tot?_tot.toFixed(2):'';
+  if(d.preview){document.getElementById('form-prev-txt').textContent=d.preview;document.getElementById('form-prev-txt').style.display='block';}
+  if(imgCapturada){document.getElementById('form-img').src=imgCapturada;document.getElementById('form-img-wrap').style.display='block';}
+  if(_vp)mostrarCalcUI();
+  document.getElementById('prog-fill').style.width='100%';
+}
+function usarExemplo(){
+  imgCapturada=null;mostrarLoading('Carregando NF de exemplo...');
+  setTimeout(()=>{
+    preencherFormIA({numero:'11277',cliente:'Elevar Com e Ass.Tec de Elevadores LTDA',emissao:'2026-04-01',vprod:2979.70,frete:196.17,totalNF:3485.52,
+      preview:'NF-e 000011277 — Eletronica Santerno Industria e Comercio LTDA\nDestinatario: Elevar Com e Ass.Tec de Elevadores LTDA\nValor produtos: R$ 2.979,70 | IPI (9,75%): R$ 309,65\nFrete: R$ 196,17 | Total NF: R$ 3.485,52'});
+  },1800);
+}
+const SERVIDOR='http://localhost:5000';
+
+async function checarServidor(){
+  try{
+    const r=await fetch(SERVIDOR+'/status',{signal:AbortSignal.timeout(2000)});
+    const d=await r.json();
+    return d;
+  }catch(e){return null;}
+}
+
+function abrirConfigApiKey(){
+  window.open(SERVIDOR+'/config','_blank','width=560,height=420');
+}
+
+function processarArquivo(input){
+  const file=input.files[0];if(!file)return;
+  if(file.type.startsWith('image/')){
+    const url=URL.createObjectURL(file);
+    document.getElementById('upload-img').src=url;
+    document.getElementById('upload-nome').textContent=file.name;
+    document.getElementById('upload-preview').style.display='block';
+  }
+  mostrarLoading('Lendo: '+file.name);
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const b64=e.target.result.split(',')[1];
+    if(file.type.startsWith('image/'))imgCapturada=e.target.result;
+    try{
+      const status=await checarServidor();
+      if(!status){
+        throw new Error('Servidor local nao encontrado.\n\nCertifique-se de que o arquivo servidor.py esta rodando.\nAbra o terminal na pasta do sistema e execute:\n  python servidor.py');
+      }
+      if(!status.key_configurada){
+        const ok=confirm('API Key nao configurada.\nDeseja configurar agora?');
+        if(ok)abrirConfigApiKey();
+        mostrarStep('upload');
+        return;
+      }
+      const resp=await fetch(SERVIDOR+'/ler-nf',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({b64,mime:file.type})
+      });
+      const obj=await resp.json();
+      if(obj.erro) throw new Error(obj.erro);
+      preencherFormIA({...obj,preview:'Arquivo: '+file.name+'\nCliente: '+obj.cliente+' | NF: '+obj.numero+' | Emissao: '+obj.emissao+'\nValor produtos: R$ '+Number(obj.vprod).toFixed(2)+' | Frete: R$ '+Number(obj.frete||0).toFixed(2)+' | Total NF: R$ '+Number(obj.totalNF).toFixed(2)});
+    }catch(err){
+      preencherFormIA({numero:'',cliente:'',emissao:hoje(),vprod:0,frete:0,totalNF:0,
+        preview:'Erro: '+err.message});
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function salvarNF(){
+  const numero=document.getElementById('f-numero').value.trim();
+  const cliente=document.getElementById('f-cliente').value.trim();
+  const emissao=document.getElementById('f-emissao').value;
+  const taxa=parseFloat(document.getElementById('f-taxa').value)||5;
+  const nP=parseInt(document.getElementById('f-parc').value)||1;
+  const d1=document.getElementById('f-data1').value||hoje();
+  if(!numero||!cliente||!_vp){alert('Preencha numero da NF, cliente e valor dos produtos.');return;}
+  const com=+(_vp*taxa/100).toFixed(2);
+  const vP=+(_tot/nP).toFixed(2),cP=+(com/nP).toFixed(2);
+  if(modoEdicao!==null){
+    const n=notas.find(x=>x.id===modoEdicao);
+    const old=n.parcelas;
+    n.numero=numero;n.cliente=cliente;n.emissao=emissao;
+    n.vprod=_vp;n.ipi=_ipi;n.frete=_fr;n.totalNF=_tot;n.taxa=taxa;
+    n.imgSrc=imgCapturada||n.imgSrc||null;
+    n.parcelas=Array.from({length:nP},function(_,i){return{n:i+1,venc:addM(d1,i),valor:vP,comissao:cP,status:old[i]?old[i].status:'pendente'};});
+  } else {
+    notas.push({id:nextId++,numero,cliente,emissao,vprod:_vp,ipi:_ipi,frete:_fr,totalNF:_tot,taxa,imgSrc:imgCapturada||null,
+      parcelas:Array.from({length:nP},function(_,i){return{n:i+1,venc:addM(d1,i),valor:vP,comissao:cP,status:'pendente'};})});
+  }
+  fecharModal('modal-form');render();
+}
+
+function confirmarExcluir(nid){
+  const n=notas.find(x=>x.id===nid);if(!n)return;
+  document.getElementById('confirm-msg').innerHTML='<b>NF '+n.numero+'</b> — '+n.cliente+'<br>'+n.parcelas.length+' parcela(s) &middot; Comissao total: '+fmt(totCom(n));
+  document.getElementById('btn-confirm-ok').onclick=function(){
+    notas=notas.filter(x=>x.id!==nid);
+    fecharModal('modal-confirm');fecharModal('modal-detalhe');render();
+  };
+  document.getElementById('modal-confirm').classList.add('open');
+}
+
+function togglePago(nid,pi){
+  const n=notas.find(x=>x.id===nid);if(!n)return;
+  n.parcelas[pi].status=n.parcelas[pi].status==='recebido'?'pendente':'recebido';
+  renderMetricas();renderTabela();renderParcelas();
+  if(document.getElementById('modal-detalhe').classList.contains('open'))verDetalhe(nid);
+}
+
+function verDetalhe(nid){
+  const n=notas.find(x=>x.id===nid);if(!n)return;
+  document.getElementById('detalhe-titulo').textContent='NF '+n.numero;
+  document.getElementById('btn-edit-det').onclick=function(){editarNota(nid);};
+  document.getElementById('btn-del-det').onclick=function(){fecharModal('modal-detalhe');confirmarExcluir(nid);};
+  const cT=totCom(n),cR=+n.parcelas.filter(p=>p.status==='recebido').reduce((s,p)=>s+p.comissao,0).toFixed(2);
+  let h='';
+  if(n.imgSrc)h+='<div style="text-align:center;margin-bottom:14px"><img src="'+n.imgSrc+'" style="max-width:100%;max-height:180px;border-radius:var(--radius);border:1px solid var(--border);object-fit:contain"></div>';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:1.25rem">'+
+    '<div class="metric"><div class="metric-label">Cliente</div><div style="font-size:12px;font-weight:500;margin-top:4px">'+n.cliente+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Valor produtos</div><div class="metric-value" style="font-size:15px">'+fmt(n.vprod)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">IPI (9,75%)</div><div class="metric-value" style="font-size:15px">'+fmt(n.ipi)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Total NF</div><div class="metric-value" style="font-size:15px">'+fmt(n.totalNF)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Comissao ('+n.taxa+'%)</div><div class="metric-value green" style="font-size:15px">'+fmt(cT)+'</div><div class="metric-sub">recebido: '+fmt(cR)+'</div></div>'+
+    '</div>'+
+    '<table><thead><tr><th>Parcela</th><th>Vencimento</th><th>Valor</th><th>Minha comissao</th><th>Status</th><th></th></tr></thead><tbody>';
+  n.parcelas.forEach(function(p,i){
+    const d=diffD(p.venc);
+    const sit=p.status==='recebido'?'Recebido':d<0?'Atraso '+Math.abs(d)+'d':d===0?'Vence hoje':'Em '+d+'d';
+    const bd=p.status==='recebido'?'badge-ok':d<0?'badge-danger':d<=5?'badge-warn':'badge-info';
+    h+='<tr><td style="text-align:center;font-weight:600">'+(i+1)+'/'+n.parcelas.length+'</td><td>'+fmtD(p.venc)+'</td><td class="mono">'+fmt(p.valor)+'</td><td class="mono" style="color:var(--accent);font-weight:600">'+fmt(p.comissao)+'</td><td><span class="badge '+bd+'">'+sit+'</span></td><td><button class="tbl-btn tbl-btn-green" onclick="togglePago('+n.id+','+i+')">'+(p.status==='recebido'?'Desfazer':'Marcar pago')+'</button></td></tr>';
+  });
+  h+='</tbody></table>';
+  document.getElementById('detalhe-content').innerHTML=h;
+  document.getElementById('modal-detalhe').classList.add('open');
+}
+
+function exportCSV(){
+  const rows=[['NF','Cliente','Emissao','Valor Produtos','IPI 9.75%','Frete','Total NF','Taxa %','Comissao Total','Parcela','Vencimento','Valor Parcela','Comissao Parcela','Status']];
+  notas.forEach(n=>{
+    const cT=totCom(n);
+    n.parcelas.forEach((p,i)=>rows.push([n.numero,n.cliente,fmtD(n.emissao),n.vprod.toFixed(2),n.ipi.toFixed(2),(n.frete||0).toFixed(2),n.totalNF.toFixed(2),n.taxa,cT.toFixed(2),(i+1)+'/'+n.parcelas.length,fmtD(p.venc),p.valor.toFixed(2),p.comissao.toFixed(2),p.status]));
+  });
+  const csv='\uFEFF'+rows.map(r=>r.map(c=>'"'+c+'"').join(';')).join('\r\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='comissoes_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+// ---- FIREBASE: SALVAR E CARREGAR ----
+async function salvarNoFirebase(){
+  try{
+    await db.collection('config').doc('taxa').set({taxa: taxaGlobal()});
+    const batch = db.batch();
+    // Limpar coleção e reescrever
+    const snap = await db.collection('notas').get();
+    snap.forEach(d=>batch.delete(d.ref));
+    notas.forEach(n=>{
+      const ref = db.collection('notas').doc(String(n.id));
+      batch.set(ref, JSON.parse(JSON.stringify(n)));
+    });
+    await batch.commit();
+  }catch(e){console.error('Erro ao salvar:',e);}
+}
+
+async function carregarDoFirebase(){
+  try{
+    mostrarLoading2('Carregando dados...');
+    // Carregar taxa
+    const taxaDoc = await db.collection('config').doc('taxa').get();
+    if(taxaDoc.exists){
+      const t = taxaDoc.data().taxa||3;
+      localStorage.setItem('taxa_global',String(t));
+      document.getElementById('label-taxa-global').textContent=t+'%';
+    }
+    // Carregar notas
+    const snap = await db.collection('notas').orderBy('id').get();
+    if(!snap.empty){
+      notas = [];
+      snap.forEach(d=>{ notas.push(d.data()); });
+      nextId = Math.max(...notas.map(n=>n.id))+1;
+    }
+    esconderLoading2();
+    render();
+  }catch(e){
+    console.error('Erro ao carregar:',e);
+    esconderLoading2();
+    render();
+  }
+}
+
+function mostrarLoading2(msg){
+  document.getElementById('loading-overlay').style.display='flex';
+  document.getElementById('loading-overlay-msg').textContent=msg||'Aguarde...';
+}
+function esconderLoading2(){
+  document.getElementById('loading-overlay').style.display='none';
+}
+
+// Interceptar salvarNF para salvar no Firebase também
+const _salvarNF_orig = salvarNF;
+salvarNF = function(){
+  _salvarNF_orig();
+  salvarNoFirebase();
+};
+
+// Interceptar togglePago
+const _togglePago_orig = togglePago;
+togglePago = function(nid,pi){
+  _togglePago_orig(nid,pi);
+  salvarNoFirebase();
+};
+
+// Interceptar confirmarExcluir
+const _confirmarExcluir_orig = confirmarExcluir;
+confirmarExcluir = function(nid){
+  const n=notas.find(x=>x.id===nid);if(!n)return;
+  document.getElementById('confirm-msg').innerHTML='<b>NF '+n.numero+'</b> — '+n.cliente+'<br>'+n.parcelas.length+' parcela(s)';
+  document.getElementById('btn-confirm-ok').onclick=function(){
+    notas=notas.filter(x=>x.id!==nid);
+    fecharModal('modal-confirm');fecharModal('modal-detalhe');
+    render();
+    salvarNoFirebase();
+  };
+  document.getElementById('modal-confirm').classList.add('open');
+};
+
+// Interceptar aplicarTaxaGlobal
+const _aplicarTaxa_orig = aplicarTaxaGlobal;
+aplicarTaxaGlobal = function(){
+  _aplicarTaxa_orig();
+  salvarNoFirebase();
+};
+
+// Carregar do Firebase ao iniciar
+carregarDoFirebase();
+</script>
+
+<!-- OVERLAY LOADING -->
+<div id="loading-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(245,244,240,.92);align-items:center;justify-content:center;flex-direction:column;gap:16px">
+  <div style="width:40px;height:40px;border:3px solid #d0cdc7;border-top-color:#1a5c3a;border-radius:50%;animation:spin .8s linear infinite"></div>
+  <div style="font-size:14px;color:#6b6860;font-family:DM Sans,sans-serif" id="loading-overlay-msg">Carregando...</div>
+</div>
+</body>
+</html>
